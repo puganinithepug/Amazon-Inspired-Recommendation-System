@@ -1,4 +1,6 @@
-# Team 2
+# Recommender ML System Project
+
+Produced on GitLab McGill MIMI server. This is a collaborative project, credit to members.
 
 Members: Élodie Côté-Gauthier, Daria Vorsina, Ziling Cheng, Sarah Al Taleb, Evan Jiang
 
