@@ -1,0 +1,73 @@
+version: "3.8"
+
+volumes:
+  recommendation_logs:
+
+services:
+  # NGINX Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: recommender-loadbalancer
+    ports:
+      - "8080:80"
+    # remove the bind mount (it causes read-only + mountpoint issues)
+    volumes:
+      - ./nginx-blue-primary.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - recommender-blue
+      - recommender-green
+    restart: unless-stopped
+    healthcheck:
+      # go back to the old endpoint that your nginx-* configs expose
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/nginx-health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Blue version (primary)
+  recommender-blue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: recommender-blue
+    environment:
+      - MODEL_VERSION=${MODEL_VERSION:-v1}
+      - MODEL_NAME=${MODEL_NAME:-svd}
+      - DEPLOYMENT_COLOR=blue
+    volumes:
+      - recommendation_logs:/app/logs
+    expose:
+      - "8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  # Green version (standby/new version)
+  recommender-green:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: recommender-green
+    environment:
+      - MODEL_VERSION=${MODEL_VERSION:-v1}
+      - MODEL_NAME=${MODEL_NAME:-svd}
+      - DEPLOYMENT_COLOR=green
+    volumes:
+      - recommendation_logs:/app/logs
+    expose:
+      - "8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+networks:
+  default:
+    name: team-2-main_default
