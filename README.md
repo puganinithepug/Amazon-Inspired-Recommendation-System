@@ -23,12 +23,13 @@ We containerize the inference service with Docker.
 - **Dockerfile** – Builds containerized deployment environment.
 - **requirements.txt** – Lists Python dependencies.
 
+Instructions within the scope of the group project:
 
 ## To get started
 - Clone the repository:
 ``` bash
-    git clone
-    cd Recommender-ML
+    git clone https://gitlab.cs.mcgill.ca/comp585_2025f/team-2
+    cd team-2
 ```
 - Set up:
 ```bash
