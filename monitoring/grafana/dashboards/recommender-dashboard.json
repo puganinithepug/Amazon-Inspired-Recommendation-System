@@ -1,0 +1,45 @@
+{
+    "title": "Recommender Monitoring",
+    "timezone": "browser",
+    "panels": [
+      { "type": "stat", "title": "Availability", "targets":[{"expr":"avg(probe_success)"}],
+        "gridPos":{"x":0,"y":0,"w":6,"h":4} },
+      { "type": "graph", "title": "Requests vs 5xx",
+        "targets":[
+          {"expr":"sum(rate(http_requests_total[1m]))","legendFormat":"All"},
+          {"expr":"sum(rate(http_requests_total{http_status=~\"5..\"}[1m]))","legendFormat":"5xx"}
+        ],
+        "gridPos":{"x":6,"y":0,"w":18,"h":8} },
+      { "type": "graph", "title": "p95 Latency",
+        "targets":[
+          {"expr":"histogram_quantile(0.95, sum(rate(http_request_latency_seconds_bucket[5m])) by (le, endpoint))", "legendFormat":"{{endpoint}}"}
+        ],
+        "gridPos":{"x":0,"y":8,"w":12,"h":8} },
+      { "type": "graph", "title": "Online Quality (positive_rating_rate)",
+        "targets":[
+          {"expr":"online_positive_rating_rate","legendFormat":"pos_rate"},
+          {"expr":"online_quality_score","legendFormat":"quality (alias)"}
+        ],
+        "gridPos":{"x":12,"y":8,"w":12,"h":8} },
+      { "type": "graph", "title": "Engagement & Rating Rate",
+        "targets":[
+          {"expr":"online_user_engagement_rate","legendFormat":"engagement"},
+          {"expr":"online_rating_rate","legendFormat":"rating_rate"}
+        ],
+        "gridPos":{"x":0,"y":16,"w":12,"h":8} },
+      { "type": "graph", "title": "Throughput (new recs)",
+        "targets":[
+          {"expr":"deriv(online_movies_recommended[5m])","legendFormat":"d(recs)/dt"}
+        ],
+        "gridPos":{"x":12,"y":16,"w":12,"h":8} },
+      { "type": "stat", "title": "Average Rating",
+        "targets":[{"expr":"online_average_rating"}],
+        "gridPos":{"x":0,"y":24,"w":6,"h":4} },
+      { "type": "stat", "title": "Users Who Rated Recs",
+        "targets":[{"expr":"online_users_who_rated_recommendations"}],
+        "gridPos":{"x":6,"y":24,"w":6,"h":4} }
+    ],
+    "schemaVersion": 36,
+    "version": 1
+  }
+  

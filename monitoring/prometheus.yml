@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # Scrape your Flask app metrics
+  - job_name: "recommender_app"
+    static_configs:
+      - targets: ["nginx:80"]
+    metrics_path: /metrics
+    scrape_timeout: 8s
+    scrape_interval: 15s
+  # External availability via blackbox probing /health
+  - job_name: "recommender_blackbox"
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://nginx/health
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+
+  # Exporter reading your online_metrics.json
+  - job_name: "online_metrics_exporter"
+    static_configs:
+      - targets: ["online_metrics_exporter:9108"]

@@ -1,0 +1,75 @@
+groups:
+- name: service-health
+  rules:
+  - alert: ServiceDown
+    expr: probe_success == 0
+    for: 2m
+    labels: { severity: critical }
+    annotations:
+      summary: "Service is down"
+      description: "Blackbox probe failing for {{ $labels.instance }}"
+
+  - alert: HighErrorRate
+    expr: |
+      sum(rate(http_requests_total{http_status=~"5.."}[5m]))
+        /
+      sum(rate(http_requests_total[5m])) > 0.05
+    for: 5m
+    labels: { severity: warning }
+    annotations:
+      summary: "High 5xx error rate"
+      description: "5xx > 5% over 5m"
+
+  - alert: HighLatencyP95
+    expr: histogram_quantile(0.95, sum(rate(http_request_latency_seconds_bucket[5m])) by (le, endpoint)) > 0.5
+    for: 5m
+    labels: { severity: warning }
+    annotations:
+      summary: "High p95 latency"
+      description: "p95 latency > 500ms on {{ $labels.endpoint }}"
+
+- name: model-quality
+  rules:
+  - alert: OnlineQualityRelativeDrop
+    expr: online_positive_rating_rate
+          < 0.7 * avg_over_time(online_positive_rating_rate[24h])
+    for: 30m
+    labels: { severity: warning }
+    annotations:
+      summary: "Online quality drop"
+      description: "positive_rating_rate below 70% of 24h baseline"
+
+  - alert: OnlineQualityAbsoluteLow
+    expr: online_positive_rating_rate < 0.4
+    for: 30m
+    labels: { severity: warning }
+    annotations:
+      summary: "Online quality low (absolute)"
+      description: "positive_rating_rate < 0.4 for 30m"
+
+  - alert: EngagementRelativeDrop
+    expr: avg_over_time(online_user_engagement_rate[24h]) >= 0.01
+          and on()
+          online_user_engagement_rate < 0.6 * avg_over_time(online_user_engagement_rate[24h])
+    for: 30m
+    labels: { severity: warning }
+    annotations:
+      summary: "Engagement drop"
+      description: "engagement < 60% of 24h baseline"
+
+  - alert: NoNewRecommendations
+    expr: deriv(online_movies_recommended[10m]) <= 0.001
+    for: 15m
+    labels: { severity: warning }
+    annotations:
+      summary: "No new recommendations detected"
+      description: "online_movies_recommended not increasing (possible outage or pipeline issue)"
+
+  # Alias so generic dashboards/alerts still work
+  - alert: OnlineQualityDrop
+    expr: online_quality_score < 0.4
+    for: 30m
+    labels: { severity: info }
+    annotations:
+      summary: "online_quality_score low"
+      description: "Alias of positive_rating_rate; < 0.4 for 30m"

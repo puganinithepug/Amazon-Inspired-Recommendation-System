@@ -1,0 +1,14 @@
+INFO: Trainset loaded successfully.
+INFO: Testset loaded successfully.
+=== SVD Evaluation ===
+Total predictions: 16174
+New user predictions: 1729 (10.69%)
+Known user predictions: 14445 (89.31%)
+RMSE (all): 0.6919, MAE (all): 0.5634
+RMSE (known users): 0.6896
+RMSE (new users): 0.7105
+
+Precision@20: 0.0446
+Recall@20: 0.6909
+Hit Rate@20: 0.6909
+Mean Reciprocal Rank: 0.6646

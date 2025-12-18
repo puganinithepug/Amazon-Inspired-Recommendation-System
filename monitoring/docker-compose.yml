@@ -1,0 +1,79 @@
+
+version: "3.8"
+
+volumes:
+  metrics_data: {}
+  recommendation_logs:
+    external: true
+    name: team-2_recommendation_logs
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts.yml:/etc/prometheus/alerts.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    ports:
+      - "9090:9090"
+    depends_on:
+      - blackbox
+      - online_metrics_exporter
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports: ["3000:3000"]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on: [prometheus]
+    restart: unless-stopped
+
+  blackbox:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox
+    ports: ["9115:9115"]
+    volumes:
+      - ./blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    command: ["--config.file=/etc/blackbox_exporter/config.yml"]
+    restart: unless-stopped
+
+  online_metrics_exporter:
+    build:
+      context: ..
+      dockerfile: ./monitoring/exporter.Dockerfile
+    container_name: online_metrics_exporter
+    environment:
+      ONLINE_METRICS_FILE: /metrics-data/online_metrics.json
+      EXPORTER_PORT: "9108"
+    volumes:
+      - metrics_data:/metrics-data
+    ports: ["9108:9108"]
+    restart: unless-stopped
+
+  # Runs scripts/online_evaluation.py every 5 min and writes outputs to /metrics-data
+  online_evaluator:
+    build:
+      context: ..
+      dockerfile: ./monitoring/evaluator.Dockerfile
+    container_name: online_evaluator
+    environment:
+      KAFKA_BROKER: ${KAFKA_BROKER:-fall2025-comp585.cs.mcgill.ca:9092}
+      RECOMMENDATION_LOG_FILE: ${RECOMMENDATION_LOG_FILE:-/app/logs/recommendations.log}
+    volumes:
+      - metrics_data:/metrics-data
+      - recommendation_logs:/app/logs:ro
+    restart: unless-stopped
+
+networks:
+  default:
+    name: team-2-main_default
+    external: true
