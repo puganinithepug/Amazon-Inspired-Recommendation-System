@@ -1,4 +1,4 @@
-# Recommender ML System Project
+# Amazon-Inspired Recommendation System
 
 This project is a collaborative academic team project on McGill University infrastructure; it is showcased here to emphasizes evaluation, deployment governance, and monitoring aspects of a production-oriented ML system.
 
